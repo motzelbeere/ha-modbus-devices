@@ -1,15 +1,29 @@
 # Modbus Integration with Device Support
 
-A custom component for Home Assistant that extends the built-in [Modbus integration](https://github.com/home-assistant/core/tree/dev/homeassistant/components/modbus) with **device registry support** and **`!include`-based configuration**.
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-> **Base version:** HA Core `dev` branch — `homeassistant/components/modbus`
+A custom component for Home Assistant that extends the built-in [Modbus integration](https://github.com/home-assistant/core/tree/dev/homeassistant/components/modbus) with **device registry support** and a clean, file-based configuration structure.
+
+> **Basis:** HA Core `dev` — `homeassistant/components/modbus`
 
 ---
 
-## What's new compared to the built-in integration
+## Motivation
 
-### `devices:` block in YAML
-Group sensors and switches under a named device. All entities in the block are automatically linked to the same device in the Home Assistant Device Registry — visible in the UI under **Settings → Devices**.
+The built-in Modbus integration treats all entities as a flat list — there is no concept of a physical device. If you have multiple Modbus devices on the same bus (e.g. a heat pump, a wallbox, and a circulation pump), all their sensors and switches appear mixed together in Home Assistant with no grouping.
+
+This integration adds a `devices:` block to the YAML configuration. Each physical device gets its own entry in the **Home Assistant Device Registry**, with all its entities grouped under it — visible and navigable in the UI under **Settings → Devices & Services → Modbus**.
+
+---
+
+## Was ist neu / What's new
+
+### `devices:` Block
+
+Geräte werden als benannte Blöcke definiert. Alle Entities innerhalb eines Blocks werden automatisch dem Gerät im HA Device Registry zugeordnet.
+
+Devices are defined as named blocks. All entities within a block are automatically linked to the device in the HA Device Registry.
 
 ```yaml
 modbus:
@@ -19,32 +33,75 @@ modbus:
     port: 502
 
     devices:
-      - name: "My Device"
-        manufacturer: "ACME Corp"
-        model: "Model X"
-        sw_version: "1.0"
+      - name: "Heat Pump"
+        manufacturer: "Vaillant"
+        model: "aroTHERM plus"
+        sw_version: "3.02"
         device_address: 1
-
         sensors:
-          - name: "Temperature"
+          - name: "Flow Temperature"
             address: 100
             data_type: float32
             unit_of_measurement: "°C"
             device_class: temperature
-
+            state_class: measurement
         switches:
-          - name: "Relay 1"
+          - name: "Heating Circuit"
             address: 200
             write_type: coil
+
+      - name: "Circulation Pump"
+        manufacturer: "Grundfos"
+        device_address: 2
+        sensors:
+          - name: "Power"
+            address: 50
+            data_type: uint16
+            unit_of_measurement: "W"
+            device_class: power
 ```
 
-### `!include` support for compact `configuration.yaml`
-Keep your main config clean by splitting device definitions into separate files:
+### Geräteeigenschaften / Device properties
+
+| Key | Pflicht / Required | Beschreibung / Description |
+|-----|--------------------|---------------------------|
+| `name` | ✅ | Gerätename in der HA-Oberfläche / Device name in HA UI |
+| `device_address` | ✅ | Modbus Slave-/Unit-Adresse für alle Entities dieses Geräts / Modbus slave address for all entities in this block |
+| `manufacturer` | ❌ | Hersteller / Manufacturer |
+| `model` | ❌ | Modellbezeichnung / Model name |
+| `sw_version` | ❌ | Softwareversion / Software version |
+| `hw_version` | ❌ | Hardwareversion / Hardware version |
+
+Innerhalb eines `devices:` Blocks werden alle Standard-Plattformen unterstützt:
+
+All standard platform sections are supported inside a `devices:` block:
+
+`sensors:` · `switches:` · `binary_sensors:` · `covers:` · `fans:` · `lights:` · `climates:`
+
+### Modulare Konfiguration mit `!include`
+
+Die `configuration.yaml` bleibt kompakt. Jedes Gerät lebt in einer eigenen Datei.
+
+Keep `configuration.yaml` compact. Each device lives in its own file.
 
 ```yaml
 # configuration.yaml
 modbus: !include_dir_merge_list modbus/
 ```
+
+```
+/config/
+├── configuration.yaml
+└── modbus/
+    ├── heat_pump.yaml
+    ├── wallbox.yaml
+    ├── circulation_pump.yaml
+    └── valves.yaml
+```
+
+Jede Datei beginnt direkt mit dem Hub-Eintrag (ohne übergeordneten `modbus:` Schlüssel):
+
+Each file starts directly with the hub entry (no top-level `modbus:` key):
 
 ```yaml
 # modbus/wallbox.yaml
@@ -60,94 +117,73 @@ modbus: !include_dir_merge_list modbus/
         ...
 ```
 
-### Device Registry entries
-Each `devices:` block creates a proper entry in the HA Device Registry with:
-- Name, Manufacturer, Model
-- Software / Hardware version (optional)
-- All entities grouped under the device
-
 ---
 
 ## Installation
 
-### Manual
-1. Copy the `custom_components/modbus` folder into your HA config directory:
+### Manuell / Manual
+
+1. Den Ordner `custom_components/modbus` in das HA-Konfigurationsverzeichnis kopieren:
+   Copy the `custom_components/modbus` folder into your HA config directory:
    ```
    /config/custom_components/modbus/
    ```
-2. Restart Home Assistant.
+2. Home Assistant neu starten / Restart Home Assistant.
 
-### HACS (custom repository)
-1. In HACS → **Custom repositories** → add this repo URL, category **Integration**.
-2. Install "Modbus (with Device Support)".
-3. Restart Home Assistant.
+### HACS (empfohlen / recommended)
 
----
-
-## Configuration
-
-All existing Modbus YAML options remain unchanged. The `devices:` block is **additive** — you can mix `devices:` with the existing flat `sensors:`, `switches:` etc. at hub level.
-
-### Device block options
-
-| Key | Required | Description |
-|-----|----------|-------------|
-| `name` | ✅ | Device name shown in HA UI |
-| `device_address` | ✅ | Modbus slave/unit address for all entities in this block |
-| `manufacturer` | ❌ | Manufacturer string |
-| `model` | ❌ | Model string |
-| `sw_version` | ❌ | Software version string |
-| `hw_version` | ❌ | Hardware version string |
-
-Inside a `devices:` block, all standard platform sections are supported:
-
-- `sensors:`
-- `switches:`
-- `binary_sensors:`
-- `covers:`
-- `fans:`
-- `lights:`
-- `climates:`
+1. **HACS → Custom repositories** → diese Repo-URL eintragen, Kategorie **Integration**
+   Add this repo URL, category **Integration**
+2. „Modbus (with Device Support)" installieren / Install
+3. Home Assistant neu starten / Restart Home Assistant
 
 ---
 
-## Example configurations
-
-See [`example_configs/`](example_configs/) for ready-to-use device definitions:
-
-| File | Device |
-|------|--------|
-| [`wallbox_daheimlader.yaml`](example_configs/wallbox_daheimlader.yaml) | Daheimlader Wallbox (TCP Modbus) |
-
----
-
-## Compatibility
+## Kompatibilität / Compatibility
 
 | HA Version | Status |
 |------------|--------|
-| 2024.1+ | ✅ Tested |
+| 2024.1+ | ✅ |
 | 2026.4 | ✅ Tested |
+
+Alle bestehenden Modbus-YAML-Optionen bleiben unverändert. Der `devices:` Block ist additiv — vorhandene flache `sensors:`, `switches:` etc. auf Hub-Ebene funktionieren weiterhin.
+
+All existing Modbus YAML options remain unchanged. The `devices:` block is additive — existing flat `sensors:`, `switches:` etc. at hub level continue to work.
 
 ---
 
-## How it works
+## Funktionsweise / How it works
 
-The standard Modbus integration sets up entities via `async_load_platform` (YAML path), which has no Config Entry — so `device_info` is silently ignored by HA's entity platform code.
+Die Standard-Modbus-Integration richtet Entities über `async_load_platform` ein — ohne Config Entry. HA's Entity-Platform-Code ignoriert `device_info` in diesem Fall stillschweigend.
 
-This fork uses the **`SOURCE_IMPORT` pattern**:
+Diese Integration verwendet das **`SOURCE_IMPORT`-Pattern**: Die YAML-Konfiguration erzeugt automatisch einen unsichtbaren Config Entry. Dadurch wird `device_info` korrekt verarbeitet und ein Device-Registry-Eintrag angelegt.
+
+The standard Modbus integration sets up entities via `async_load_platform` — without a Config Entry. HA's entity platform code silently ignores `device_info` in this case.
+
+This integration uses the **`SOURCE_IMPORT` pattern**: the YAML configuration automatically creates an invisible Config Entry, which allows `device_info` to be processed correctly and a Device Registry entry to be created.
 
 ```
 configuration.yaml
-    ↓  async_setup() reads YAML, flattens devices: blocks
-Config Entry (created automatically, invisible to user)
-    ↓  async_setup_entry() initialises hub + entities
-Device Registry entry created per devices: block
+    ↓  async_setup() liest YAML, verarbeitet devices: Blöcke
+       async_setup() reads YAML, processes devices: blocks
+Config Entry (automatisch / created automatically)
+    ↓  async_setup_entry() initialisiert Hub + Entities
+       async_setup_entry() initialises hub + entities
+Device Registry Eintrag pro devices: Block
+Device Registry entry per devices: block
 ```
-
-The user experience is identical to the built-in integration — only YAML configuration, no UI flow required.
 
 ---
 
-## Credits
+## Beispielkonfigurationen / Example configurations
 
-Based on the [Home Assistant Core Modbus integration](https://github.com/home-assistant/core/tree/dev/homeassistant/components/modbus) by the Home Assistant contributors, licensed under the Apache 2.0 License.
+Fertige Gerätedefinitionen unter / Ready-to-use device definitions in [`example_configs/`](example_configs/).
+
+---
+
+## Lizenz / License
+
+Basiert auf der [Home Assistant Core Modbus Integration](https://github.com/home-assistant/core/tree/dev/homeassistant/components/modbus) der Home Assistant Mitwirkenden.
+Licensed under the [Apache License 2.0](LICENSE).
+
+Based on the [Home Assistant Core Modbus integration](https://github.com/home-assistant/core/tree/dev/homeassistant/components/modbus) by the Home Assistant contributors.
