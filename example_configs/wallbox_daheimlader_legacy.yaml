@@ -1,0 +1,559 @@
+# Legacy format — flat entity list, no device grouping
+# This is the standard Modbus YAML format WITHOUT the devices: block.
+# All entities appear in HA without any device association.
+# Use wallbox_daheimlader.yaml for the new devices: format instead.
+
+- name: daheimlader
+  type: tcp
+  host: 192.168.1.100  # TODO: IP address of your wallbox
+  port: 502
+
+  sensors:
+
+    # -------------------------------------------------------
+    # SYSTEM STATUS
+    # -------------------------------------------------------
+
+    - name: "Wallbox Ladezustand"
+      slave: 255
+      address: 0
+      data_type: uint16
+      scan_interval: 5
+      unique_id: wallbox_ladezustand
+      # 1:Standby  2:Connected  3:Ready  4:Charging
+      # 5:Start error  6:Charge end  7:System error
+      # 8:Scheduled charge  9:FW upgrade  10:Power on
+
+    - name: "Wallbox Kabelstatus"
+      slave: 255
+      address: 2
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_kabelstatus
+      # 0: Not connected, 1: Connected
+
+    - name: "Wallbox Fehlercode"
+      slave: 255
+      address: 4
+      data_type: uint16
+      scan_interval: 15
+      unique_id: wallbox_fehlercode
+      # 0:No error  11:CP error  12:Emergency stop  13:Undervoltage
+      # 14:Overvoltage  15:Overtemperature  16:Meter error
+      # 17:Ground/leakage  18:Short circuit  19:Overcurrent
+      # 21:Vehicle not charging  22:Vehicle not detected  23:Relay stuck
+      # 24:Leakage detector fault  25:PE error  26:Start failed
+
+    # -------------------------------------------------------
+    # REAL-TIME MEASUREMENTS — CURRENT (active during charging only)
+    # -------------------------------------------------------
+
+    - name: "Wallbox Strom L1"
+      slave: 255
+      address: 6
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      state_class: measurement
+      scan_interval: 5
+      unique_id: wallbox_strom_l1
+
+    - name: "Wallbox Strom L2"
+      slave: 255
+      address: 8
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      state_class: measurement
+      scan_interval: 5
+      unique_id: wallbox_strom_l2
+
+    - name: "Wallbox Strom L3"
+      slave: 255
+      address: 10
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      state_class: measurement
+      scan_interval: 5
+      unique_id: wallbox_strom_l3
+
+    # -------------------------------------------------------
+    # REAL-TIME MEASUREMENTS — POWER (active during charging only)
+    # -------------------------------------------------------
+
+    - name: "Wallbox Gesamtleistung"
+      slave: 255
+      address: 12
+      data_type: uint32
+      unit_of_measurement: "W"
+      device_class: power
+      state_class: measurement
+      scan_interval: 5
+      unique_id: wallbox_gesamtleistung
+
+    - name: "Wallbox Leistung L1"
+      slave: 255
+      address: 16
+      data_type: uint32
+      unit_of_measurement: "W"
+      device_class: power
+      state_class: measurement
+      scan_interval: 5
+      unique_id: wallbox_leistung_l1
+
+    - name: "Wallbox Leistung L2"
+      slave: 255
+      address: 20
+      data_type: uint32
+      unit_of_measurement: "W"
+      device_class: power
+      state_class: measurement
+      scan_interval: 5
+      unique_id: wallbox_leistung_l2
+
+    - name: "Wallbox Leistung L3"
+      slave: 255
+      address: 24
+      data_type: uint32
+      unit_of_measurement: "W"
+      device_class: power
+      state_class: measurement
+      scan_interval: 5
+      unique_id: wallbox_leistung_l3
+
+    # -------------------------------------------------------
+    # ENERGY & METER
+    # -------------------------------------------------------
+
+    - name: "Wallbox Zaehlerstand"
+      slave: 255
+      address: 28
+      data_type: uint32
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "kWh"
+      device_class: energy
+      state_class: total_increasing
+      scan_interval: 30
+      unique_id: wallbox_zaehlerstand
+
+    - name: "Wallbox Session Energie"
+      slave: 255
+      address: 72
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "kWh"
+      device_class: energy
+      state_class: total
+      scan_interval: 10
+      unique_id: wallbox_session_energie
+      # Real-time during charging, otherwise last session value
+
+    - name: "Wallbox Ladezeit"
+      slave: 255
+      address: 78
+      data_type: uint32
+      unit_of_measurement: "s"
+      scan_interval: 10
+      unique_id: wallbox_ladezeit
+      # Real-time during charging, otherwise last session value
+
+    # -------------------------------------------------------
+    # CURRENT LIMITS (device & cable)
+    # -------------------------------------------------------
+
+    - name: "Wallbox Max Strom EVSE"
+      slave: 255
+      address: 32
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      scan_interval: 60
+      unique_id: wallbox_max_strom_evse
+      # Hardware maximum of the charging station — does not change
+
+    - name: "Wallbox Min Strom EVSE"
+      slave: 255
+      address: 34
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      scan_interval: 60
+      unique_id: wallbox_min_strom_evse
+      # Hardware minimum of the charging station — does not change
+
+    - name: "Wallbox Kabel Max Strom"
+      slave: 255
+      address: 36
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      scan_interval: 60
+      unique_id: wallbox_kabel_max_strom
+      # Cable capacity — changes only when cable is replaced
+
+    # -------------------------------------------------------
+    # SERIAL NUMBER (16 registers = 16 ASCII characters)
+    # -------------------------------------------------------
+
+    - name: "Wallbox Seriennummer R1"
+      slave: 255
+      address: 38
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r1
+    - name: "Wallbox Seriennummer R2"
+      slave: 255
+      address: 39
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r2
+    - name: "Wallbox Seriennummer R3"
+      slave: 255
+      address: 40
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r3
+    - name: "Wallbox Seriennummer R4"
+      slave: 255
+      address: 41
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r4
+    - name: "Wallbox Seriennummer R5"
+      slave: 255
+      address: 42
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r5
+    - name: "Wallbox Seriennummer R6"
+      slave: 255
+      address: 43
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r6
+    - name: "Wallbox Seriennummer R7"
+      slave: 255
+      address: 44
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r7
+    - name: "Wallbox Seriennummer R8"
+      slave: 255
+      address: 45
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r8
+    - name: "Wallbox Seriennummer R9"
+      slave: 255
+      address: 46
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r9
+    - name: "Wallbox Seriennummer R10"
+      slave: 255
+      address: 47
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r10
+    - name: "Wallbox Seriennummer R11"
+      slave: 255
+      address: 48
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r11
+    - name: "Wallbox Seriennummer R12"
+      slave: 255
+      address: 49
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r12
+    - name: "Wallbox Seriennummer R13"
+      slave: 255
+      address: 50
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r13
+    - name: "Wallbox Seriennummer R14"
+      slave: 255
+      address: 51
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r14
+    - name: "Wallbox Seriennummer R15"
+      slave: 255
+      address: 52
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r15
+    - name: "Wallbox Seriennummer R16"
+      slave: 255
+      address: 53
+      data_type: uint16
+      scan_interval: 3600
+      unique_id: wallbox_sn_r16
+
+    # -------------------------------------------------------
+    # RFID CARD ID (8 registers = 8 ASCII characters, PRO only)
+    # Only populated when charge mode (Reg 93) = 1
+    # -------------------------------------------------------
+
+    - name: "Wallbox Karten ID R1"
+      slave: 255
+      address: 54
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r1
+    - name: "Wallbox Karten ID R2"
+      slave: 255
+      address: 55
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r2
+    - name: "Wallbox Karten ID R3"
+      slave: 255
+      address: 56
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r3
+    - name: "Wallbox Karten ID R4"
+      slave: 255
+      address: 57
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r4
+    - name: "Wallbox Karten ID R5"
+      slave: 255
+      address: 58
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r5
+    - name: "Wallbox Karten ID R6"
+      slave: 255
+      address: 59
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r6
+    - name: "Wallbox Karten ID R7"
+      slave: 255
+      address: 60
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r7
+    - name: "Wallbox Karten ID R8"
+      slave: 255
+      address: 61
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r8
+    - name: "Wallbox Karten ID R9"
+      slave: 255
+      address: 62
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r9
+    - name: "Wallbox Karten ID R10"
+      slave: 255
+      address: 63
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r10
+    - name: "Wallbox Karten ID R11"
+      slave: 255
+      address: 64
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r11
+    - name: "Wallbox Karten ID R12"
+      slave: 255
+      address: 65
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r12
+    - name: "Wallbox Karten ID R13"
+      slave: 255
+      address: 66
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r13
+    - name: "Wallbox Karten ID R14"
+      slave: 255
+      address: 67
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r14
+    - name: "Wallbox Karten ID R15"
+      slave: 255
+      address: 68
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r15
+    - name: "Wallbox Karten ID R16"
+      slave: 255
+      address: 69
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_karten_id_r16
+
+    # -------------------------------------------------------
+    # CONTROL REGISTERS (writable) — also readable as sensors
+    # -------------------------------------------------------
+
+    - name: "Wallbox Ausfall Strom"
+      slave: 255
+      address: 87
+      data_type: uint16
+      input_type: holding
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      scan_interval: 60
+      unique_id: wallbox_ausfall_strom
+      # Current limit on communication loss — NOT for PRO
+
+    - name: "Wallbox Timeout"
+      slave: 255
+      address: 89
+      data_type: uint16
+      input_type: holding
+      unit_of_measurement: "s"
+      scan_interval: 60
+      unique_id: wallbox_timeout
+      # Communication timeout in seconds — NOT for PRO
+
+    - name: "Wallbox Freigabe"
+      slave: 255
+      address: 90
+      data_type: uint16
+      input_type: holding
+      scan_interval: 5
+      unique_id: wallbox_freigabe
+      # 0: OCPP in control, 1: Local release
+      # Not documented in PDF — determined from Modbus scan
+
+    - name: "Wallbox Ladestrom Ist"
+      slave: 255
+      address: 91
+      data_type: uint16
+      input_type: holding
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "A"
+      device_class: current
+      state_class: measurement
+      scan_interval: 10
+      unique_id: wallbox_ladestrom_ist
+
+    - name: "Wallbox Lademodus Sensor"
+      slave: 255
+      address: 93
+      data_type: uint16
+      input_type: holding
+      scan_interval: 10
+      unique_id: wallbox_lademodus_sensor
+      # 0: Plug & Charge, 1: Card/Authentication
+      # Numeric sensor for automations (in addition to switch)
+
+    # -------------------------------------------------------
+    # REAL-TIME MEASUREMENTS — VOLTAGE
+    # -------------------------------------------------------
+
+    - name: "Wallbox Spannung L1"
+      slave: 255
+      address: 109
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "V"
+      device_class: voltage
+      state_class: measurement
+      scan_interval: 10
+      unique_id: wallbox_spannung_l1
+
+    - name: "Wallbox Spannung L2"
+      slave: 255
+      address: 111
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "V"
+      device_class: voltage
+      state_class: measurement
+      scan_interval: 10
+      unique_id: wallbox_spannung_l2
+
+    - name: "Wallbox Spannung L3"
+      slave: 255
+      address: 113
+      data_type: uint16
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: "V"
+      device_class: voltage
+      state_class: measurement
+      scan_interval: 10
+      unique_id: wallbox_spannung_l3
+
+    # -------------------------------------------------------
+    # PRO SERIES ONLY: PHASE CONTROL
+    # -------------------------------------------------------
+
+    - name: "Wallbox Phasenstatus"
+      slave: 255
+      address: 184
+      data_type: uint16
+      scan_interval: 15
+      unique_id: wallbox_phasenstatus
+      # 1: Single phase, 3: Three phase
+
+    - name: "Wallbox Phasenwechsel Status"
+      slave: 255
+      address: 188
+      data_type: uint16
+      scan_interval: 10
+      unique_id: wallbox_phasenwechsel_status
+      # 0: Standby, 1: Switch active (2 min pause), 2: Completed
+
+  switches:
+
+    # Charge command: 1=Start, 2=Stop (trigger register, always reads back 0)
+    - name: "Wallbox Ladebefehl"
+      slave: 255
+      address: 95
+      write_type: holding
+      command_on: 1
+      command_off: 2
+      unique_id: wallbox_ladebefehl
+
+    # Charge mode: OFF=Plug&Charge (0), ON=Card/RFID (1)
+    - name: "Wallbox Lademodus Karte"
+      slave: 255
+      address: 93
+      write_type: holding
+      command_on: 1
+      command_off: 0
+      unique_id: wallbox_lademodus
+
+    # Phase selection (PRO only): OFF=single phase (1), ON=three phase (3)
+    - name: "Wallbox 3-Phasig"
+      slave: 255
+      address: 186
+      write_type: holding
+      command_on: 3
+      command_off: 1
+      unique_id: wallbox_phasenwahl

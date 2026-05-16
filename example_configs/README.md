@@ -24,9 +24,12 @@ Place all device YAML files in a `modbus/` folder next to `configuration.yaml`.
 
 ## Available examples
 
-| File | Device | Protocol | Entities |
-|------|--------|----------|----------|
-| `wallbox_daheimlader.yaml` | Daheimlader Wallbox | TCP Modbus | 58 sensors, 3 switches |
+| File | Device | Format | Entities |
+|------|--------|--------|----------|
+| `wallbox_daheimlader.yaml` | Daheimlader Wallbox | `devices:` block (new) | 58 sensors, 3 switches |
+| `wallbox_daheimlader_legacy.yaml` | Daheimlader Wallbox | flat list (legacy) | 58 sensors, 3 switches |
+
+The legacy file shows the same device in the standard Modbus format — useful as a before/after comparison.
 
 ---
 

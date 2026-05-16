@@ -61,6 +61,8 @@ from .const import (
     CALL_TYPE_DISCRETE,
     CALL_TYPE_REGISTER_HOLDING,
     CALL_TYPE_REGISTER_INPUT,
+    CALL_TYPE_WRITE_COIL,
+    CALL_TYPE_WRITE_REGISTER,
     CALL_TYPE_X_COILS,
     CALL_TYPE_X_REGISTER_HOLDINGS,
     CONF_BAUDRATE,
@@ -91,6 +93,7 @@ from .const import (
     CONF_FAN_MODE_TOP,
     CONF_FAN_MODE_VALUES,
     CONF_FANS,
+    CONF_NUMBERS,
     CONF_HVAC_ACTION_COOLING,
     CONF_HVAC_ACTION_DEFROSTING,
     CONF_HVAC_ACTION_DRYING,
@@ -468,6 +471,19 @@ LIGHT_SCHEMA = BASE_SWITCH_SCHEMA.extend(
 
 FAN_SCHEMA = BASE_SWITCH_SCHEMA.extend({})
 
+NUMBER_SCHEMA = vol.All(
+    BASE_STRUCT_SCHEMA.extend(
+        {
+            vol.Optional(CONF_DEVICE_CLASS): SENSOR_DEVICE_CLASSES_SCHEMA,
+            vol.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
+            vol.Optional(CONF_MIN_VALUE, default=0): vol.Coerce(float),
+            vol.Optional(CONF_MAX_VALUE, default=100): vol.Coerce(float),
+            vol.Optional("step"): vol.Coerce(float),
+        }
+    ),
+    struct_validator,
+)
+
 SENSOR_SCHEMA = vol.All(
     BASE_STRUCT_SCHEMA.extend(
         {
@@ -524,6 +540,7 @@ def _make_device_schema() -> vol.Schema:
             ),
             vol.Optional(CONF_SWITCHES): vol.All(cv.ensure_list, [SWITCH_SCHEMA]),
             vol.Optional(CONF_FANS): vol.All(cv.ensure_list, [FAN_SCHEMA]),
+            vol.Optional(CONF_NUMBERS): vol.All(cv.ensure_list, [NUMBER_SCHEMA]),
         }
     )
 
@@ -547,6 +564,7 @@ MODBUS_SCHEMA = vol.Schema(
         ),
         vol.Optional(CONF_SWITCHES): vol.All(cv.ensure_list, [SWITCH_SCHEMA]),
         vol.Optional(CONF_FANS): vol.All(cv.ensure_list, [FAN_SCHEMA]),
+        vol.Optional(CONF_NUMBERS): vol.All(cv.ensure_list, [NUMBER_SCHEMA]),
         vol.Optional(CONF_DEVICES): vol.All(
             cv.ensure_list, [_make_device_schema()]
         ),
