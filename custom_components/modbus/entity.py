@@ -74,6 +74,24 @@ from .const import (
 from .modbus import ModbusHub
 
 
+def build_modbus_device_info(
+    hub_name: str, entry: dict[str, Any], device_address: int
+) -> DeviceInfo | None:
+    """Build DeviceInfo from the device_info injected by _flatten_devices()."""
+    device_info_data = entry.get(CONF_DEVICE_INFO)
+    if not device_info_data:
+        return None
+    device_addr = device_info_data.get("device_address") or device_address
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{hub_name}_{device_addr}_{device_info_data['name']}")},
+        name=device_info_data["name"],
+        manufacturer=device_info_data.get(CONF_MANUFACTURER),
+        model=device_info_data.get(CONF_MODEL),
+        sw_version=device_info_data.get(CONF_SW_VERSION),
+        hw_version=device_info_data.get(CONF_HW_VERSION),
+    )
+
+
 class ModbusBaseEntity(Entity):
     """Base for readonly platforms."""
 
@@ -105,20 +123,9 @@ class ModbusBaseEntity(Entity):
         self._nan_value = entry.get(CONF_NAN_VALUE)
         self._zero_suppress = entry.get(CONF_ZERO_SUPPRESS)
 
-        if device_info_data := entry.get(CONF_DEVICE_INFO):
-            device_addr = device_info_data.get("device_address") or self._device_address
-            self._modbus_device_info = DeviceInfo(
-                identifiers={
-                    (DOMAIN, f"{hub.name}_{device_addr}_{device_info_data['name']}")
-                },
-                name=device_info_data["name"],
-                manufacturer=device_info_data.get(CONF_MANUFACTURER),
-                model=device_info_data.get(CONF_MODEL),
-                sw_version=device_info_data.get(CONF_SW_VERSION),
-                hw_version=device_info_data.get(CONF_HW_VERSION),
-            )
-        else:
-            self._modbus_device_info: DeviceInfo | None = None
+        self._modbus_device_info = build_modbus_device_info(
+            hub.name, entry, self._device_address
+        )
 
     @property
     def device_info(self) -> DeviceInfo | None:

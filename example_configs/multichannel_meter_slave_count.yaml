@@ -1,0 +1,35 @@
+# Example: slave_count inside a devices: block
+#
+# Demonstrates a multi-channel energy meter where 4 channels share the same
+# register layout, each offset by the data type's register width (int32 = 2
+# registers per channel). Instead of writing 4 near-identical sensor blocks,
+# one entry with `slave_count: 3` generates all 4 entities from a single
+# combined Modbus read, and all 4 are grouped under the same device.
+
+- name: meter_hub
+  type: tcp
+  host: 192.168.1.60
+  port: 502
+
+  devices:
+    - name: "Multi-Channel Meter"
+      manufacturer: "ACME"
+      model: "MCM-4"
+      device_address: 12
+
+      sensors:
+        - name: "Channel Power"
+          address: 100
+          data_type: int32
+          slave_count: 3
+          unit_of_measurement: "W"
+          device_class: power
+          state_class: measurement
+
+        - name: "Channel Energy"
+          address: 200
+          data_type: uint32
+          slave_count: 3
+          unit_of_measurement: "kWh"
+          device_class: energy
+          state_class: total

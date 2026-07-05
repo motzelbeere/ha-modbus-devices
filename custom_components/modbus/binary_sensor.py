@@ -10,6 +10,7 @@ from homeassistant.const import (
     CONF_BINARY_SENSORS,
     CONF_DEVICE_CLASS,
     CONF_NAME,
+    CONF_SLAVE,
     CONF_UNIQUE_ID,
     STATE_ON,
 )
@@ -27,11 +28,12 @@ from .const import (
     _LOGGER,
     CALL_TYPE_COIL,
     CALL_TYPE_DISCRETE,
+    CONF_DEVICE_ADDRESS,
     CONF_SLAVE_COUNT,
     CONF_VIRTUAL_COUNT,
     DOMAIN,
 )
-from .entity import ModbusBaseEntity
+from .entity import ModbusBaseEntity, build_modbus_device_info
 from .modbus import ModbusHub
 
 PARALLEL_UPDATES = 1
@@ -114,7 +116,8 @@ class ModbusBinarySensor(ModbusBaseEntity, RestoreEntity, BinarySensorEntity):
         )
 
         return [
-            SlaveSensor(self._coordinator, idx, entry) for idx in range(slave_count)
+            SlaveSensor(self._coordinator, idx, entry, self._hub.name)
+            for idx in range(slave_count)
         ]
 
     async def async_added_to_hass(self) -> None:
@@ -157,6 +160,7 @@ class SlaveSensor(
         coordinator: DataUpdateCoordinator[list[int] | None],
         idx: int,
         entry: dict[str, Any],
+        hub_name: str,
     ) -> None:
         """Initialize the Modbus binary sensor."""
         idx += 1
@@ -167,6 +171,10 @@ class SlaveSensor(
             self._attr_unique_id = f"{self._attr_unique_id}_{idx}"
         self._attr_available = False
         self._result_inx = idx
+        device_address = entry.get(CONF_DEVICE_ADDRESS) or entry.get(CONF_SLAVE, 1)
+        self._attr_device_info = build_modbus_device_info(
+            hub_name, entry, device_address
+        )
         super().__init__(coordinator)
 
     async def async_added_to_hass(self) -> None:

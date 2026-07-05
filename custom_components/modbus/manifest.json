@@ -1,7 +1,7 @@
 {
   "domain": "modbus",
   "name": "Modbus",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "config_flow": true,
   "codeowners": [],
   "documentation": "https://www.home-assistant.io/integrations/modbus",

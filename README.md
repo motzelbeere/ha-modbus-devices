@@ -78,6 +78,36 @@ All standard platform sections are supported inside a `devices:` block:
 
 `sensors:` · `switches:` · `binary_sensors:` · `covers:` · `fans:` · `lights:` · `climates:`
 
+### `slave_count` — mehrere Kanäle aus einer Definition / multiple channels from one definition
+
+Für Geräte mit vielen strukturell gleichen Kanälen (z.B. ein Mehrkanal-Energiezähler) kann `slave_count` (oder `virtual_count`, identisch) auf einem `sensor:`/`binary_sensor:`-Eintrag gesetzt werden. Statt jeden Kanal einzeln zu definieren, erzeugt HA `slave_count + 1` Entities, wobei die Registeradresse pro Kanal automatisch um die Registerbreite des Datentyps weitergerückt wird — gelesen wird in **einer einzigen** Modbus-Anfrage statt einer pro Kanal.
+
+For devices with many structurally identical channels (e.g. a multi-channel energy meter), `slave_count` (alias `virtual_count`) can be set on a `sensor:`/`binary_sensor:` entry. Instead of defining every channel separately, HA generates `slave_count + 1` entities, automatically advancing the register address per channel by the data type's register width — read in a **single** Modbus request instead of one per channel.
+
+`slave_count` funktioniert auch innerhalb eines `devices:` Blocks — alle generierten Kanal-Entities werden demselben Gerät zugeordnet:
+
+`slave_count` also works inside a `devices:` block — all generated channel entities are grouped under the same device:
+
+```yaml
+devices:
+  - name: "Multi-Channel Meter"
+    manufacturer: "ACME"
+    device_address: 12
+    sensors:
+      - name: "Channel Power"
+        address: 100
+        data_type: int32
+        slave_count: 3   # -> 4 sensors total: "Channel Power", "Channel Power 1", "Channel Power 2", "Channel Power 3"
+        unit_of_measurement: "W"
+        device_class: power
+```
+
+Alle vier Sensoren erscheinen im HA UI unter dem Gerät „Multi-Channel Meter".
+
+All four sensors appear in the HA UI under the "Multi-Channel Meter" device.
+
+Unterstützte Plattformen / Supported platforms: `sensors:`, `binary_sensors:` (wie in der nativen Integration / same as the native integration).
+
 ### Modulare Konfiguration mit `!include`
 
 Die `configuration.yaml` bleibt kompakt. Jedes Gerät lebt in einer eigenen Datei.

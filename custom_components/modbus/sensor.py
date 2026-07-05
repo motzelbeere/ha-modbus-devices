@@ -14,6 +14,7 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_OFFSET,
     CONF_SENSORS,
+    CONF_SLAVE,
     CONF_UNIQUE_ID,
     CONF_UNIT_OF_MEASUREMENT,
 )
@@ -29,6 +30,7 @@ from homeassistant.helpers.update_coordinator import (
 from . import get_hub
 from .const import (
     _LOGGER,
+    CONF_DEVICE_ADDRESS,
     CONF_SCALE,
     CONF_SLAVE_COUNT,
     CONF_VIRTUAL_COUNT,
@@ -36,7 +38,7 @@ from .const import (
     DEFAULT_SCALE,
     DOMAIN,
 )
-from .entity import ModbusStructEntity
+from .entity import ModbusStructEntity, build_modbus_device_info
 from .modbus import ModbusHub
 
 PARALLEL_UPDATES = 1
@@ -130,7 +132,8 @@ class ModbusRegisterSensor(ModbusStructEntity, RestoreSensor, SensorEntity):
         )
 
         return [
-            SlaveSensor(self._coordinator, idx, entry) for idx in range(slave_count)
+            SlaveSensor(self._coordinator, idx, entry, self._hub.name)
+            for idx in range(slave_count)
         ]
 
     async def async_added_to_hass(self) -> None:
@@ -195,6 +198,7 @@ class SlaveSensor(
         coordinator: DataUpdateCoordinator[list[float | None] | None],
         idx: int,
         entry: dict[str, Any],
+        hub_name: str,
     ) -> None:
         """Initialize the Modbus register sensor."""
         idx += 1
@@ -207,6 +211,10 @@ class SlaveSensor(
         self._attr_state_class = entry.get(CONF_STATE_CLASS)
         self._attr_device_class = entry.get(CONF_DEVICE_CLASS)
         self._attr_available = False
+        device_address = entry.get(CONF_DEVICE_ADDRESS) or entry.get(CONF_SLAVE, 1)
+        self._attr_device_info = build_modbus_device_info(
+            hub_name, entry, device_address
+        )
         super().__init__(coordinator)
 
     async def async_added_to_hass(self) -> None:

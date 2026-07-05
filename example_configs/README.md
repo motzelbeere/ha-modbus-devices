@@ -28,6 +28,7 @@ Place all device YAML files in a `modbus/` folder next to `configuration.yaml`.
 |------|--------|--------|----------|
 | `wallbox_daheimlader.yaml` | Daheimlader Wallbox | `devices:` block (new) | 58 sensors, 3 switches |
 | `wallbox_daheimlader_legacy.yaml` | Daheimlader Wallbox | flat list (legacy) | 58 sensors, 3 switches |
+| `multichannel_meter_slave_count.yaml` | Multi-Channel Meter | `devices:` block + `slave_count` | 2 definitions -> 8 sensors, 1 combined read each |
 
 The legacy file shows the same device in the standard Modbus format — useful as a before/after comparison.
 
