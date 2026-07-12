@@ -5,6 +5,11 @@
 # registers per channel). Instead of writing 4 near-identical sensor blocks,
 # one entry with `slave_count: 3` generates all 4 entities from a single
 # combined Modbus read, and all 4 are grouped under the same device.
+#
+# The switches block below shows the same shorthand for 4 independent relay
+# outputs (one coil per channel, address + index). Unlike the sensors above,
+# each generated switch reads/writes on its own -- there is no shared read to
+# batch, so slave_count here is purely config brevity, not a traffic saving.
 
 - name: meter_hub
   type: tcp
@@ -33,3 +38,9 @@
           unit_of_measurement: "kWh"
           device_class: energy
           state_class: total
+
+      switches:
+        - name: "Channel Relay"
+          address: 300
+          slave_count: 3   # -> 4 switches at coil 300, 301, 302, 303
+          write_type: coil

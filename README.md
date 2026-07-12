@@ -106,7 +106,11 @@ Alle vier Sensoren erscheinen im HA UI unter dem Gerät „Multi-Channel Meter".
 
 All four sensors appear in the HA UI under the "Multi-Channel Meter" device.
 
-Unterstützte Plattformen / Supported platforms: `sensors:`, `binary_sensors:` (wie in der nativen Integration / same as the native integration).
+**Auch für `switches:` (Erweiterung gegenüber der nativen Integration):** Bei Sensoren/Binary-Sensoren teilen sich alle generierten Kanäle **eine** gebündelte Leseanfrage. Schalter lesen/schreiben aber grundsätzlich unabhängig voneinander (kein gemeinsamer Read), daher ist `slave_count` bei `switches:` reine Config-Verkürzung: jeder zusätzliche Kanal ist ein normaler, unabhängiger Schalter mit Adresse `address + Index`. Funktioniert genauso innerhalb eines `devices:` Blocks (Geräte-Zuordnung inklusive) und respektiert einen optionalen `verify:`-Block (dessen `address` wird ebenfalls pro Kanal verschoben).
+
+**Also works for `switches:` (extension beyond the native integration):** For sensors/binary_sensors, all generated channels share **one** combined read request. Switches inherently read/write independently (no shared read), so `slave_count` on `switches:` is pure config brevity: each extra channel is a normal, independent switch at `address + index`. Works the same way inside a `devices:` block (including device grouping), and respects an optional `verify:` block (its `address` is shifted per channel too).
+
+Unterstützte Plattformen / Supported platforms: `sensors:`, `binary_sensors:`, `switches:` (die ersten beiden wie in der nativen Integration, `switches:` ist eine Erweiterung dieses Forks / the first two match the native integration, `switches:` is an extension of this fork).
 
 ### Modulare Konfiguration mit `!include`
 

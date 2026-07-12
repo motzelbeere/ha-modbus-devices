@@ -459,6 +459,8 @@ COVERS_SCHEMA = BASE_COMPONENT_SCHEMA.extend(
 SWITCH_SCHEMA = BASE_SWITCH_SCHEMA.extend(
     {
         vol.Optional(CONF_DEVICE_CLASS): SWITCH_DEVICE_CLASSES_SCHEMA,
+        vol.Exclusive(CONF_VIRTUAL_COUNT, "vir_switch_count"): cv.positive_int,
+        vol.Exclusive(CONF_SLAVE_COUNT, "vir_switch_count"): cv.positive_int,
     }
 )
 
@@ -692,6 +694,47 @@ def _flatten_devices(conf_hub: dict) -> dict:
     return conf_hub
 
 
+def _expand_slave_count(entities: list[dict]) -> list[dict]:
+    """Expand slave_count/virtual_count entries into individual flat entity configs.
+
+    Unlike sensors/binary_sensors (which share one combined read via a
+    coordinator), switches read and write independently, so slave_count here
+    is pure config-brevity: each extra instance is a normal, independent
+    entity whose address is offset by its index. device_info (if present,
+    e.g. injected by _flatten_devices) is inherited by every generated
+    instance since it's carried over in the shallow copy.
+    """
+    expanded: list[dict] = []
+    for entity_conf in entities:
+        slave_count = entity_conf.get(CONF_SLAVE_COUNT) or entity_conf.get(
+            CONF_VIRTUAL_COUNT, 0
+        )
+        if not slave_count:
+            expanded.append(entity_conf)
+            continue
+        base_address = entity_conf[CONF_ADDRESS]
+        base_name = entity_conf[CONF_NAME]
+        base_unique_id = entity_conf.get(CONF_UNIQUE_ID)
+        base_verify_address = None
+        if entity_conf.get(CONF_VERIFY):
+            base_verify_address = entity_conf[CONF_VERIFY].get(CONF_ADDRESS)
+        for i in range(slave_count + 1):
+            child = dict(entity_conf)
+            child.pop(CONF_SLAVE_COUNT, None)
+            child.pop(CONF_VIRTUAL_COUNT, None)
+            child[CONF_ADDRESS] = base_address + i
+            if i:
+                child[CONF_NAME] = f"{base_name} {i}"
+                if base_unique_id:
+                    child[CONF_UNIQUE_ID] = f"{base_unique_id}_{i}"
+                if base_verify_address is not None:
+                    verify = dict(child[CONF_VERIFY])
+                    verify[CONF_ADDRESS] = base_verify_address + i
+                    child[CONF_VERIFY] = verify
+            expanded.append(child)
+    return expanded
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Modbus component from YAML configuration."""
     if DOMAIN not in config:
@@ -704,6 +747,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Preprocess each hub: expand device definitions into flat entity lists
     for conf_hub in config[DOMAIN]:
         _flatten_devices(conf_hub)
+        if CONF_SWITCHES in conf_hub:
+            conf_hub[CONF_SWITCHES] = _expand_slave_count(conf_hub[CONF_SWITCHES])
         # Create a config entry per hub via SOURCE_IMPORT
         hass.async_create_task(
             hass.config_entries.flow.async_init(
@@ -723,6 +768,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         for conf_hub in reload_config[DOMAIN]:
             _flatten_devices(conf_hub)
+            if CONF_SWITCHES in conf_hub:
+                conf_hub[CONF_SWITCHES] = _expand_slave_count(conf_hub[CONF_SWITCHES])
             await hass.config_entries.flow.async_init(
                 DOMAIN,
                 context={"source": SOURCE_IMPORT},
